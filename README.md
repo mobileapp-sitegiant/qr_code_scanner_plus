@@ -1,21 +1,51 @@
 [![pub package](https://img.shields.io/pub/v/qr_code_scanner_plus?include_prereleases)](https://pub.dartlang.org/packages/qr_code_scanner_plus)
 
-**If you are starting a new project, you should probably look at the [mobile_scanner](https://pub.dev/packages/mobile_scanner) package as it is actively maintained**.
+⚠️ **If you are starting a new project, or your project requires new features or long-term stability, use an actively maintained alternative such as [mobile_scanner](https://pub.dev/packages/mobile_scanner).**
 
-# Important note: Maintenance only fork
+---
 
-This is a fork of `qr_code_scanner` package with extra maintenance done to fix Android and WEB support. As such, it is targeting mainly existing users of qr_code_scanner.
-**No new features:** This package will not implement any new features. This is maintanance fork only.
+# ⚠️ Maintenance-only fork (no new features)
 
-# Help Desired
+This package is a **maintenance-only fork** of the original `qr_code_scanner` package.
 
-I would happily review improvements and bug fixes.
+Its sole purpose is to keep existing projects compiling and running on newer versions of Flutter, the Android Gradle Plugin, and related tooling after the upstream package became unmaintained. It exists to allow **existing users to postpone migration**, not to provide an actively developed QR scanning solution.
 
-Since the underlying frameworks of this package, [zxing for android](https://github.com/zxing/zxing) and [MTBBarcodescanner for iOS](https://github.com/mikebuss/MTBBarcodeScanner) are both not longer maintaned, this plugin is no longer up to date and in maintenance mode only. Only bug fixes and minor enhancements will be considered.
+**New feature PRs will be rejected.**  
+This includes (but is not limited to):
+- New functionality
+- Feature extensions
+- API changes or expansions
+- Behavior changes beyond minimal fixes required for compatibility
+
+If you need additional functionality, this package is not the right choice.
+
+---
+
+## Scope and limitations
+
+- I maintain **only the Flutter-facing code** in this repository.
+- The underlying native libraries used by this package are:
+  - Android: [zxing](https://github.com/zxing/zxing)
+  - iOS: [MTBBarcodeScanner](https://github.com/mikebuss/MTBBarcodeScanner)
+
+Both native libraries are **outdated and unmaintained**. There are known issues and limitations in those native packages that will **not be fixed here**.
+
+As a result:
+- Native-level bugs should be expected.
+- This package is not a good foundation for adding or extending features.
+- Only minimal fixes required to keep the package usable on current Flutter toolchains will be considered.
+
+Projects that require new functionality, reliability, or long-term maintenance of both Flutter and native code should migrate to a fully maintained alternative such as [mobile_scanner](https://pub.dev/packages/mobile_scanner).
+
+---
 
 # QR Code Scanner Plus
 
-A QR code scanner that works on iOS, Android and WEB by natively embedding the platform view within Flutter. The integration with Flutter is seamless, much better than jumping into a native Activity or a ViewController to perform the scan.
+A QR code scanner for iOS, Android, and Web that embeds platform views in Flutter.
+
+This description is retained for historical context only and does **not** imply ongoing feature development.
+
+---
 
 ## Screenshots
 
@@ -122,41 +152,17 @@ class _QRViewExampleState extends State<QRViewExample> {
 
 ## Android Integration
 
-In order to use this plugin, please update the Gradle, Kotlin and Kotlin Gradle Plugin:
+In order to use this plugin, please make sure to add the Camera permissions in `android/app/src/main/AndroidManifest.xml`
 
-In `android/build.gradle` change `ext.kotlin_version = '1.3.50'` to `ext.kotlin_version = '1.5.10'`
-
-In `android/build.gradle` change `classpath 'com.android.tools.build:gradle:3.5.0'` to `classpath 'com.android.tools.build:gradle:4.2.0'`
-
-In `android/gradle/wrapper/gradle-wrapper.properties` change `distributionUrl=https\://services.gradle.org/distributions/gradle-5.6.2-all.zip` to `distributionUrl=https\://services.gradle.org/distributions/gradle-6.9-all.zip`
-
-In `android/app/build.gradle` change
-`defaultConfig{`
-`...`
-`minSdkVersion 16`
-`}` to
-`defaultConfig{`
-`...`
-`minSdkVersion 20`
-`}`
-
-### _Warning_
-
-If you are using Flutter Beta or Dev channel (1.25 or 1.26) you can get the following error:
-
-`java.lang.AbstractMethodError: abstract method "void io.flutter.plugin.platform.PlatformView.onFlutterViewAttached(android.view.View)"`
-
-This is a bug in Flutter which is being tracked here: https://github.com/flutter/flutter/issues/72185
-
-There is a workaround by adding `android.enableDexingArtifactTransform=false` to your `gradle.properties` file.
+```xml
+    <uses-permission android:name="android.permission.CAMERA" />
+```
 
 ## iOS Integration
 
 In order to use this plugin, add the following to your Info.plist file:
 
 ```
-<key>io.flutter.embedded_views_preview</key>
-<true/>
 <key>NSCameraUsageDescription</key>
 <string>This app needs camera access to scan QR codes</string>
 ```
@@ -205,19 +211,8 @@ Resume camera stream and scanner.
 await controller.resumeCamera();
 ```
 
-# SDK
-
-Requires at least SDK 20.
-Requires at least iOS 8.
-
-# TODOs
-
-- iOS Native embedding is written to match what is supported in the framework as of the date of publication of this package. It needs to be improved as the framework support improves.
-- In future, options will be provided for default states.
-- Finally, I welcome PR's to make it better :), thanks
-
 # Credits
 
 - Android: https://github.com/zxing/zxing
 - iOS: https://github.com/mikebuss/MTBBarcodeScanner
-- Special Thanks To: LeonDevLifeLog for his contributions towards improving this package.
+- Original qr_code_scanner contributors
