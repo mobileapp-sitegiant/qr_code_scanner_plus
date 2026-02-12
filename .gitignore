@@ -1,3 +1,6 @@
+# Swift Package Manager
+.swiftpm/
+
 # Miscellaneous
 *.class
 *.lock

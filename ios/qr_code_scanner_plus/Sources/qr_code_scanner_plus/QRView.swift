@@ -6,15 +6,15 @@
 //
 
 import Foundation
-import MTBBarcodeScanner
+import AVFoundation
 
 public class QRView:NSObject,FlutterPlatformView {
-    @IBOutlet var previewView: UIView!
-    var scanner: MTBBarcodeScanner?
+    var previewView: UIView
+    var scanner: NativeBarcodeScanner?
     var registrar: FlutterPluginRegistrar
     var channel: FlutterMethodChannel
-    var cameraFacing: MTBCamera
-    
+    var cameraFacing: CameraPosition
+
     // Codabar, maxicode, rss14 & rssexpanded not supported. Replaced with qr.
     // UPCa uses ean13 object.
     var QRCodeTypes = [
@@ -35,18 +35,18 @@ public class QRView:NSObject,FlutterPlatformView {
           14: AVMetadataObject.ObjectType.ean13,
           15: AVMetadataObject.ObjectType.upce
          ]
-    
+
     public init(withFrame frame: CGRect, withRegistrar registrar: FlutterPluginRegistrar, withId id: Int64, params: Dictionary<String, Any>){
         self.registrar = registrar
         previewView = UIView(frame: frame)
-        cameraFacing = MTBCamera.init(rawValue: UInt(Int(params["cameraFacing"] as! Double))) ?? MTBCamera.back
+        cameraFacing = CameraPosition(rawValue: UInt(Int(params["cameraFacing"] as! Double))) ?? .back
         channel = FlutterMethodChannel(name: "net.touchcapture.qr.flutterqrplus/qrview_\(id)", binaryMessenger: registrar.messenger())
     }
-    
+
     deinit {
         scanner?.stopScanning()
     }
-    
+
     public func view() -> UIView {
         channel.setMethodCallHandler({
             [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
@@ -84,147 +84,144 @@ public class QRView:NSObject,FlutterPlatformView {
         })
         return previewView
     }
-    
+
     func setDimensions(_ result: @escaping FlutterResult, width: Double, height: Double, scanAreaWidth: Double, scanAreaHeight: Double, scanAreaOffset: Double) {
         // Then set the size of the preview area.
         previewView.frame = CGRect(x: 0, y: 0, width: width, height: height)
-        
+
         // Then set the size of the scan area.
         let midX = self.view().bounds.midX
         let midY = self.view().bounds.midY
-        
-        if let sc: MTBBarcodeScanner = scanner {
+
+        if let sc = scanner {
             // Set the size of the preview if preview is already created.
-            if let previewLayer = sc.previewLayer {
+            if let previewLayer = sc.getPreviewLayer() {
                 previewLayer.frame = self.previewView.bounds
             }
         } else {
             // Create new preview.
-            scanner = MTBBarcodeScanner(previewView: previewView)
+            scanner = NativeBarcodeScanner(previewView: previewView, cameraPosition: cameraFacing)
         }
 
         // Set scanArea if provided.
         if (scanAreaWidth != 0 && scanAreaHeight != 0) {
-            scanner?.didStartScanningBlock = {
+            scanner?.onScanningStarted = {
                 self.scanner?.scanRect = CGRect(x: Double(midX) - (scanAreaWidth / 2), y: Double(midY) - (scanAreaHeight / 2), width: scanAreaWidth, height: scanAreaHeight)
 
                 // Set offset if provided.
                 if (scanAreaOffset != 0) {
                     let reversedOffset = -scanAreaOffset
-                    self.scanner?.scanRect = (self.scanner?.scanRect.offsetBy(dx: 0, dy: CGFloat(reversedOffset)))!
-
+                    self.scanner?.scanRect = self.scanner?.scanRect?.offsetBy(dx: 0, dy: CGFloat(reversedOffset))
                 }
             }
         }
         return result(width)
-        
+
     }
-    
+
     func startScan(_ arguments: Array<Int>, _ result: @escaping FlutterResult) {
         // Check for allowed barcodes
         var allowedBarcodeTypes: Array<AVMetadataObject.ObjectType> = []
         arguments.forEach { arg in
             allowedBarcodeTypes.append( QRCodeTypes[arg]!)
         }
-        MTBBarcodeScanner.requestCameraPermission(success: { [weak self] permissionGranted in
+        NativeBarcodeScanner.requestCameraPermission { [weak self] permissionGranted in
             guard let self = self else { return }
 
             self.channel.invokeMethod("onPermissionSet", arguments: permissionGranted)
 
             if permissionGranted {
                 do {
-                    try self.scanner?.startScanning(with: self.cameraFacing, resultBlock: { [weak self] codes in
-                        if let codes = codes {
-                            for code in codes {
-                                var typeString: String;
-                                switch(code.type) {
-                                    case AVMetadataObject.ObjectType.aztec:
-                                       typeString = "AZTEC"
-                                    case AVMetadataObject.ObjectType.code39:
-                                        typeString = "CODE_39"
-                                    case AVMetadataObject.ObjectType.code93:
-                                        typeString = "CODE_93"
-                                    case AVMetadataObject.ObjectType.code128:
-                                        typeString = "CODE_128"
-                                    case AVMetadataObject.ObjectType.dataMatrix:
-                                        typeString = "DATA_MATRIX"
-                                    case AVMetadataObject.ObjectType.ean8:
-                                        typeString = "EAN_8"
-                                    case AVMetadataObject.ObjectType.ean13:
-                                        typeString = "EAN_13"
-                                    case AVMetadataObject.ObjectType.itf14,
-                                         AVMetadataObject.ObjectType.interleaved2of5:
-                                        typeString = "ITF"
-                                    case AVMetadataObject.ObjectType.pdf417:
-                                        typeString = "PDF_417"
-                                    case AVMetadataObject.ObjectType.qr:
-                                        typeString = "QR_CODE"
-                                    case AVMetadataObject.ObjectType.upce:
-                                        typeString = "UPC_E"
+                    self.scanner?.onCodesDetected = { [weak self] codes in
+                        for code in codes {
+                            var typeString: String;
+                            switch(code.type) {
+                                case AVMetadataObject.ObjectType.aztec:
+                                   typeString = "AZTEC"
+                                case AVMetadataObject.ObjectType.code39:
+                                    typeString = "CODE_39"
+                                case AVMetadataObject.ObjectType.code93:
+                                    typeString = "CODE_93"
+                                case AVMetadataObject.ObjectType.code128:
+                                    typeString = "CODE_128"
+                                case AVMetadataObject.ObjectType.dataMatrix:
+                                    typeString = "DATA_MATRIX"
+                                case AVMetadataObject.ObjectType.ean8:
+                                    typeString = "EAN_8"
+                                case AVMetadataObject.ObjectType.ean13:
+                                    typeString = "EAN_13"
+                                case AVMetadataObject.ObjectType.itf14,
+                                     AVMetadataObject.ObjectType.interleaved2of5:
+                                    typeString = "ITF"
+                                case AVMetadataObject.ObjectType.pdf417:
+                                    typeString = "PDF_417"
+                                case AVMetadataObject.ObjectType.qr:
+                                    typeString = "QR_CODE"
+                                case AVMetadataObject.ObjectType.upce:
+                                    typeString = "UPC_E"
+                                default:
+                                    return
+                            }
+                            let bytes = { () -> Data? in
+                                if #available(iOS 11.0, *) {
+                                    switch (code.descriptor) {
+                                    case let qrDescriptor as CIQRCodeDescriptor:
+                                        return qrDescriptor.errorCorrectedPayload
+                                    case let aztecDescriptor as CIAztecCodeDescriptor:
+                                        return aztecDescriptor.errorCorrectedPayload
+                                    case let pdf417Descriptor as CIPDF417CodeDescriptor:
+                                        return pdf417Descriptor.errorCorrectedPayload
+                                    case let dataMatrixDescriptor as CIDataMatrixCodeDescriptor:
+                                        return dataMatrixDescriptor.errorCorrectedPayload
                                     default:
-                                        return
-                                }
-                                let bytes = { () -> Data? in
-                                    if #available(iOS 11.0, *) {
-                                        switch (code.descriptor) {
-                                        case let qrDescriptor as CIQRCodeDescriptor:
-                                            return qrDescriptor.errorCorrectedPayload
-                                        case let aztecDescriptor as CIAztecCodeDescriptor:
-                                            return aztecDescriptor.errorCorrectedPayload
-                                        case let pdf417Descriptor as CIPDF417CodeDescriptor:
-                                            return pdf417Descriptor.errorCorrectedPayload
-                                        case let dataMatrixDescriptor as CIDataMatrixCodeDescriptor:
-                                            return dataMatrixDescriptor.errorCorrectedPayload
-                                        default:
-                                            return nil
-                                        }
-                                    } else {
                                         return nil
                                     }
-                                }()
-                                let result = { () -> [String : Any]? in
-                                    guard let stringValue = code.stringValue else {
-                                        guard let safeBytes = bytes else {
-                                            return nil
-                                        }
-                                        return ["type": typeString, "rawBytes": safeBytes]
-                                    }
-                                    guard let safeBytes = bytes else {
-                                        return ["code": stringValue, "type": typeString]
-                                    }
-                                    return ["code": stringValue, "type": typeString, "rawBytes": safeBytes]
-                                }()
-                                guard result != nil else { continue }
-                                if allowedBarcodeTypes.count == 0 || allowedBarcodeTypes.contains(code.type) {
-                                    self?.channel.invokeMethod("onRecognizeQR", arguments: result)
+                                } else {
+                                    return nil
                                 }
-                                
+                            }()
+                            let result = { () -> [String : Any]? in
+                                guard let stringValue = code.stringValue else {
+                                    guard let safeBytes = bytes else {
+                                        return nil
+                                    }
+                                    return ["type": typeString, "rawBytes": safeBytes]
+                                }
+                                guard let safeBytes = bytes else {
+                                    return ["code": stringValue, "type": typeString]
+                                }
+                                return ["code": stringValue, "type": typeString, "rawBytes": safeBytes]
+                            }()
+                            guard result != nil else { continue }
+                            if allowedBarcodeTypes.count == 0 || allowedBarcodeTypes.contains(code.type) {
+                                self?.channel.invokeMethod("onRecognizeQR", arguments: result)
                             }
-                        }
 
-                    })
+                        }
+                    }
+                    try self.scanner?.startScanning()
                 } catch {
                     let scanError = FlutterError(code: "unknown-error", message: "Unable to start scanning", details: error)
                     result(scanError)
                 }
             }
-        })
+        }
     }
-    
+
     func stopCamera(_ result: @escaping FlutterResult) {
-        if let sc: MTBBarcodeScanner = self.scanner {
+        if let sc = self.scanner {
             if sc.isScanning() {
                 sc.stopScanning()
             }
         }
     }
-    
+
     func getCameraInfo(_ result: @escaping FlutterResult) {
         result(self.cameraFacing.rawValue)
     }
-    
+
     func flipCamera(_ result: @escaping FlutterResult) {
-        if let sc: MTBBarcodeScanner = self.scanner {
+        if let sc = self.scanner {
             if sc.hasOppositeCamera() {
                 sc.flipCamera()
                 self.cameraFacing = sc.camera
@@ -233,29 +230,29 @@ public class QRView:NSObject,FlutterPlatformView {
         }
         return result(FlutterError(code: "404", message: "No barcode scanner found", details: nil))
     }
-    
+
     func getFlashInfo(_ result: @escaping FlutterResult) {
-        if let sc: MTBBarcodeScanner = self.scanner {
-            result(sc.torchMode.rawValue != 0)
+        if let sc = self.scanner {
+            result(sc.isTorchOn)
         } else {
             let error = FlutterError(code: "cameraInformationError", message: "Could not get flash information", details: nil)
             result(error)
         }
     }
-    
+
     func toggleFlash(_ result: @escaping FlutterResult){
-        if let sc: MTBBarcodeScanner = self.scanner {
+        if let sc = self.scanner {
             if sc.hasTorch() {
                 sc.toggleTorch()
-                return result(sc.torchMode == MTBTorchMode(rawValue: 1))
+                return result(sc.isTorchOn)
             }
             return result(FlutterError(code: "404", message: "This device doesn\'t support flash", details: nil))
         }
         return result(FlutterError(code: "404", message: "No barcode scanner found", details: nil))
     }
-    
+
     func pauseCamera(_ result: @escaping FlutterResult) {
-        if let sc: MTBBarcodeScanner = self.scanner {
+        if let sc = self.scanner {
             if sc.isScanning() {
                 sc.freezeCapture()
             }
@@ -263,9 +260,9 @@ public class QRView:NSObject,FlutterPlatformView {
         }
         return result(FlutterError(code: "404", message: "No barcode scanner found", details: nil))
     }
-    
+
     func resumeCamera(_ result: @escaping FlutterResult) {
-        if let sc: MTBBarcodeScanner = self.scanner {
+        if let sc = self.scanner {
             if !sc.isScanning() {
                 sc.unfreezeCapture()
             }
@@ -275,12 +272,12 @@ public class QRView:NSObject,FlutterPlatformView {
     }
 
     func getSystemFeatures(_ result: @escaping FlutterResult) {
-        if let sc: MTBBarcodeScanner = scanner {
+        if let sc = scanner {
             var hasBackCameraVar = false
             var hasFrontCameraVar = false
             let camera = sc.camera
 
-            if(camera == MTBCamera(rawValue: 0)){
+            if(camera == CameraPosition.back){
                 hasBackCameraVar = true
                 if sc.hasOppositeCamera() {
                     hasFrontCameraVar = true
