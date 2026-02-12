@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Flutter
 import AVFoundation
 
 public class QRView:NSObject,FlutterPlatformView {

@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 
+@objc(FlutterQrPlusPlugin)
 public class SwiftFlutterQrPlusPlugin: NSObject, FlutterPlugin {
 
   var factory: QRViewFactory
