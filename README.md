@@ -24,11 +24,13 @@ If you need additional functionality, this package is not the right choice.
 ## Scope and limitations
 
 - I maintain **only the Flutter-facing code** in this repository.
-- The underlying native libraries used by this package are:
+- The underlying native scanning is handled by:
   - Android: [zxing](https://github.com/zxing/zxing)
-  - iOS: [MTBBarcodeScanner](https://github.com/mikebuss/MTBBarcodeScanner)
+  - iOS: Native AVFoundation (Swift Package Manager and CocoaPods supported)
 
-Both native libraries are **outdated and unmaintained**. There are known issues and limitations in those native packages that will **not be fixed here**.
+The original `qr_code_scanner` package used [MTBBarcodeScanner](https://github.com/mikebuss/MTBBarcodeScanner) on iOS, which has been archived and unmaintained since 2021. This fork replaced it with a native AVFoundation implementation to enable Swift Package Manager support and remove the only third-party iOS dependency.
+
+The Android native library (zxing) is **outdated and unmaintained**. There are known issues and limitations in that native package that will **not be fixed here**.
 
 As a result:
 - Native-level bugs should be expected.
@@ -214,5 +216,4 @@ await controller.resumeCamera();
 # Credits
 
 - Android: https://github.com/zxing/zxing
-- iOS: https://github.com/mikebuss/MTBBarcodeScanner
 - Original qr_code_scanner contributors
