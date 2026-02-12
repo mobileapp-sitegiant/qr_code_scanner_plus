@@ -1,4 +1,10 @@
+## 2.1.1
+
+- [iOS] Fixed CocoaPods build broken in 2.1.0 (duplicate class definition when ObjC bridge and Swift @objc coexisted)
+
 ## 2.1.0
+
+- Retracted (broken CocoaPods build)
 
 Breaking changes:
 

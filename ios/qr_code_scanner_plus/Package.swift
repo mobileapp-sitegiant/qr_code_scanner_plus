@@ -13,10 +13,7 @@ let package = Package(
     targets: [
         .target(
             name: "qr_code_scanner_plus",
-            dependencies: [],
-            cSettings: [
-                .headerSearchPath("include/qr_code_scanner_plus")
-            ]
+            dependencies: []
         )
     ]
 )
