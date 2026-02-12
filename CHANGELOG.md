@@ -1,3 +1,15 @@
+## 2.1.0
+
+Breaking changes:
+
+- Minimum Flutter version is now 3.24.0 (Dart 3.5.0)
+- [iOS] Minimum deployment target raised to iOS 12.0
+
+#### Features
+
+- [iOS] Added Swift Package Manager support (dual CocoaPods + SPM)
+- [iOS] Replaced MTBBarcodeScanner dependency with native AVFoundation scanner — the plugin now has zero third-party iOS dependencies
+
 ## 2.0.14
 
 - Updated android compile and target SDK to 36
