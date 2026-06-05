@@ -9,11 +9,15 @@ let package = Package(
     products: [
         .library(name: "qr-code-scanner-plus", targets: ["qr_code_scanner_plus"])
     ],
-    dependencies: [],
+    dependencies: [
+        .package(name: "FlutterFramework", path: "../FlutterFramework")
+    ],
     targets: [
         .target(
             name: "qr_code_scanner_plus",
-            dependencies: []
+            dependencies: [
+                .product(name: "FlutterFramework", package: "FlutterFramework")
+            ]
         )
     ]
 )
