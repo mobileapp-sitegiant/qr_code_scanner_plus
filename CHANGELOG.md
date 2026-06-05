@@ -1,3 +1,7 @@
+## 2.1.2
+
+- [iOS] Fix iOS crash when popping QR scanner page during resume (#21)
+
 ## 2.1.1
 
 - [iOS] Fixed CocoaPods build broken in 2.1.0 (duplicate class definition when ObjC bridge and Swift @objc coexisted)
