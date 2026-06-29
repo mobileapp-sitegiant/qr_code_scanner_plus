@@ -1,3 +1,10 @@
+## 2.1.1+sg1
+
+SiteGiant fork release: 2.1.1 plus the iOS landscape orientation fix backported from upstream 2.2.0 (PR #27, commit 3553810), without the Flutter 3.44 / Dart 3.12 requirement.
+
+- [iOS] Fix camera preview rotated 90° on landscape-only apps by setting `AVCaptureVideoPreviewLayer.connection.videoOrientation`, and keep the preview frame/orientation in sync on rotation via `layoutSubviews` (#19)
+- **[iOS] BREAKING:** Raised the minimum iOS deployment target from 12.0 to 13.0 (required for `UIWindowScene.interfaceOrientation`). Update your app's `Podfile`/`platform :ios` accordingly.
+
 ## 2.1.1
 
 - [iOS] Fixed CocoaPods build broken in 2.1.0 (duplicate class definition when ObjC bridge and Swift @objc coexisted)
