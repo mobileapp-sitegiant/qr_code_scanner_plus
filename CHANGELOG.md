@@ -1,3 +1,7 @@
+## 2.1.1+sg2
+
+- [iOS] Fix camera preview showing upside down (180°) in landscape: upstream PR #27 applied the `UIDeviceOrientation`-style landscape left/right swap to a `UIInterfaceOrientation` value. The interface→video orientation mapping is 1:1; the swap has been removed.
+
 ## 2.1.1+sg1
 
 SiteGiant fork release: 2.1.1 plus the iOS landscape orientation fix backported from upstream 2.2.0 (PR #27, commit 3553810), without the Flutter 3.44 / Dart 3.12 requirement.
