@@ -1,3 +1,7 @@
+## 2.1.1+sg3
+
+- [iOS] Fix camera preview stuck at the wrong orientation after a 180° rotation (landscapeLeft ↔ landscapeRight, portrait ↔ upside down). `layoutSubviews` never runs for a 180° rotation because the view bounds are unchanged, so the preview now also re-syncs on `UIDevice.orientationDidChangeNotification` (trigger only — the value still comes from the interface orientation, keeping rotation lock correct).
+
 ## 2.1.1+sg2
 
 - [iOS] Fix camera preview showing upside down (180°) in landscape: upstream PR #27 applied the `UIDeviceOrientation`-style landscape left/right swap to a `UIInterfaceOrientation` value. The interface→video orientation mapping is 1:1; the swap has been removed.

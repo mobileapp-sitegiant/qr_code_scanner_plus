@@ -28,6 +28,7 @@ public class QRView:NSObject,FlutterPlatformView {
     var registrar: FlutterPluginRegistrar
     var channel: FlutterMethodChannel
     var cameraFacing: CameraPosition
+    private var orientationObserver: NSObjectProtocol?
 
     // Codabar, maxicode, rss14 & rssexpanded not supported. Replaced with qr.
     // UPCa uses ean13 object.
@@ -60,13 +61,41 @@ public class QRView:NSObject,FlutterPlatformView {
         // Keep the preview layer's frame and orientation in sync with the view
         // bounds on every layout pass (covers interface/device rotations).
         previewView.onLayout = { [weak self] in
-            guard let self = self, let sc = self.scanner else { return }
-            sc.getPreviewLayer()?.frame = self.previewView.bounds
-            sc.updateVideoOrientation()
+            self?.syncPreviewLayerWithView()
+        }
+
+        // layoutSubviews does NOT run on a 180° rotation (landscapeLeft <->
+        // landscapeRight, or portrait <-> upside down) because the view bounds
+        // are unchanged, so also re-sync whenever the device orientation
+        // changes. The notification is only a trigger — the actual value still
+        // comes from the interface orientation, so rotation lock stays correct.
+        UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+        orientationObserver = NotificationCenter.default.addObserver(
+            forName: UIDevice.orientationDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            // The interface orientation may not be committed yet when this
+            // notification arrives; sync now and again once the rotation
+            // animation has settled.
+            self?.syncPreviewLayerWithView()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                self?.syncPreviewLayerWithView()
+            }
         }
     }
 
+    private func syncPreviewLayerWithView() {
+        guard let sc = scanner else { return }
+        sc.getPreviewLayer()?.frame = previewView.bounds
+        sc.updateVideoOrientation()
+    }
+
     deinit {
+        if let observer = orientationObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        UIDevice.current.endGeneratingDeviceOrientationNotifications()
         scanner?.stopScanning()
     }
 
